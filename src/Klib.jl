@@ -93,22 +93,25 @@ getopt(args::Array{String}, ostr::String, longopts::Array{String} = String[]) = 
 # GzFile
 #
 
+# const libz = "libz"
+const libz = "/usr/lib/x86_64-linux-gnu/libz.so"  # ubuntu 18
+# const libz = "/usr/lib64/libz.so"  # centos 7
 
 mutable struct GzFile <: IO
 	fp::Ptr{Cvoid}
 
 	function GzFile(fn::String, mode = "r")
-		x = ccall((:gzopen, "libz"), Ptr{Cvoid}, (Cstring, Cstring), fn, mode)
+		x = ccall((:gzopen, libz), Ptr{Cvoid}, (Cstring, Cstring), fn, mode)
 		y = x == C_NULL ? nothing : new(x)
 		if y != nothing finalizer(Base.close, y) end
 		return y
 	end
 end
 
-Base.readbytes!(fp::GzFile, buf::Vector{UInt8}) = ccall((:gzread, "libz"), Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Cuint), fp.fp, buf, length(buf))
+Base.readbytes!(fp::GzFile, buf::Vector{UInt8}) = ccall((:gzread, libz), Cint, (Ptr{Cvoid}, Ptr{Cvoid}, Cuint), fp.fp, buf, length(buf))
 
 function Base.close(fp::GzFile)
-	ret = fp.fp != C_NULL ? ccall((:gzclose, "libz"), Cint, (Ptr{Cvoid},), fp.fp) : -1
+	ret = fp.fp != C_NULL ? ccall((:gzclose, libz), Cint, (Ptr{Cvoid},), fp.fp) : -1
 	fp.fp = C_NULL
 	return ret
 end
